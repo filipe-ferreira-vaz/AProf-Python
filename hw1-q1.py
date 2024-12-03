@@ -54,8 +54,8 @@ class Perceptron(LinearModel):
 
         """Check error and update W and k"""
         if y_hat != y_i:
-            self.W[y_i] = self.W[y_i] + x_i
-            self.W[y_hat] = self.W[y_hat] - x_i
+            self.W[y_i] += x_i
+            self.W[y_hat] += -x_i
             self.k+=1
 
         return self.W
@@ -77,22 +77,27 @@ class LogisticRegression(LinearModel):
     def update_weight(self, x_i, y_i, learning_rate=0.001, l2_penalty=0.0, **kwargs):
 
         """Define conditional probability"""
-        """test"""
-        # P_W = np.exp(W @ x_i)/Z_x
+        exponentials = np.exp(np.dot(self.W,x_i))
+        Z_x = np.sum(np.exp(exponentials))
+        P_W = np.dot(exponentials,1/Z_x)
+    
 
         """Set weights to maximize conditional log-likelihood of training data"""
-        # self.W = np.argmax(np.sum(np.log(P_W)))
+        self.W = np.argmax(np.sum(np.log(P_W)))
 
         """Run stochastic gradient descent"""
-        # one_hot = np.eye(size)[index]
-        # loss_grad = np.sum(np.dot(P_W, one_hot @ x_i)) - (one_hot @ x_i)
+        e_y = np.zeros(6) # FIX THIS LATER
+        e_y[y_i] = 1
+        self.W += learning_rate*np.outer((e_y-P_W),x_i)
+
+        return self.W
 
         """
         x_i (n_features): a single training example
         y_i: the gold label for that example
         learning_rate (float): keep it at the default value for your plots
         """
-        raise NotImplementedError # Q1.2 (a,b)
+        # raise NotImplementedError # Q1.2 (a,b)
 
 
 class MLP(object):
