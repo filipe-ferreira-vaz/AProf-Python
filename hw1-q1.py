@@ -77,6 +77,7 @@ class LogisticRegression(LinearModel):
     def update_weight(self, x_i, y_i, learning_rate=0.001, l2_penalty=0.0, **kwargs):
 
         """Define conditional probability"""
+        """test"""
         # P_W = np.exp(W @ x_i)/Z_x
 
         """Set weights to maximize conditional log-likelihood of training data"""
