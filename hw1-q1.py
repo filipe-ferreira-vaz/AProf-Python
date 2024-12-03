@@ -75,6 +75,17 @@ class Perceptron(LinearModel):
 
 class LogisticRegression(LinearModel):
     def update_weight(self, x_i, y_i, learning_rate=0.001, l2_penalty=0.0, **kwargs):
+
+        """Define conditional probability"""
+        # P_W = np.exp(W @ x_i)/Z_x
+
+        """Set weights to maximize conditional log-likelihood of training data"""
+        # self.W = np.argmax(np.sum(np.log(P_W)))
+
+        """Run stochastic gradient descent"""
+        # one_hot = np.eye(size)[index]
+        # loss_grad = np.sum(np.dot(P_W, one_hot @ x_i)) - (one_hot @ x_i)
+
         """
         x_i (n_features): a single training example
         y_i: the gold label for that example
