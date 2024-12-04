@@ -88,10 +88,8 @@ class LogisticRegression(LinearModel):
         """Run stochastic gradient descent"""
         e_y = np.zeros(6) # FIX THIS LATER
         e_y[y_i] = 1
-        if l2_penalty != 0.0:
-            self.W += learning_rate*np.outer((e_y-P_W),x_i) - l2_penalty*learning_rate*self.W
-        else:       
-            self.W += learning_rate*np.outer((e_y-P_W),x_i)
+
+        self.W += learning_rate*np.outer((e_y-P_W),x_i) - l2_penalty*learning_rate*self.W
 
         return self.W
 
