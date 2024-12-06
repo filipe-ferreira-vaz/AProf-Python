@@ -78,10 +78,10 @@ class LogisticRegression(LinearModel):
 
         """Define conditional probability"""
         exponentials = np.exp(np.dot(self.W,x_i))
-        print("Shape of exponentials: ", exponentials.shape)
+        # print("Shape of exponentials: ", exponentials.shape)
         Z_x = np.sum(exponentials)
         P_W = np.dot(exponentials,1/Z_x)
-        print("Shape of P_W: ", P_W.shape)
+        # print("Shape of P_W: ", P_W.shape)
     
 
         """Predict label (y_hat) --- baseado no slide 8 da lecture 3"""
@@ -91,22 +91,24 @@ class LogisticRegression(LinearModel):
         # print("y: ",y_i)
 
         """Create one-hot vector for the predicted label"""
-        e_y_hat = np.zeros(6)
+        n_labels = self.W.shape[0]
+        e_y_hat = np.zeros(n_labels)
         e_y_hat[y_hat] = 1
 
         """Create one-hot vector for actual label"""
-        e_y = np.zeros(6) # FIX THIS LATER
+        e_y = np.zeros(n_labels) # FIX THIS LATER
         e_y[y_i] = 1
 
         """Define cross product between e_y and x_i"""
         ey_cross_xi = np.outer(e_y,x_i)
+        outer_product = np.outer(e_y_hat, x_i)
 
         """Declare prouct between P_W, e_y_hat and x_i; initialize to 0"""
-        PW_dot_eyhat_cross_xi = 0
+        # PW_dot_eyhat_cross_xi = 0
 
-        for i in range(6):
-            """Sum across all y_hat --- baseado no slide 21 da lecture 3"""
-            PW_dot_eyhat_cross_xi += np.dot(P_W[i],np.outer(e_y_hat,x_i))
+        """Sum across all y_hat --- baseado no slide 21 da lecture 3"""
+        # PW_dot_eyhat_cross_xi += np.dot(P_W[i],np.outer(e_y_hat,x_i))
+        PW_dot_eyhat_cross_xi = np.sum(P_W[:, np.newaxis, np.newaxis] * outer_product, axis=0)
 
         """Update weights"""
         self.W += learning_rate*(ey_cross_xi - PW_dot_eyhat_cross_xi)
