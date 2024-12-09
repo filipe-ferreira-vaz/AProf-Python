@@ -180,6 +180,21 @@ class MLP(object):
         """
         Dont forget to return the loss of the epoch.
         """
+
+        n_samples = X.shape[0]
+        epoch_loss = 0
+
+        for i in range(n_samples):
+            xi = X[i:i+1]
+            yi = y[i:i+1]
+
+            # Forward pass
+            hidden_input = xi @ self.W_1 + self.b_1
+            hidden_output = relu(hidden_input)
+            output_input = hidden_output @ self.W_2 + self.b_2
+            output = softmax(output_input)
+
+            
         raise NotImplementedError # Q1.3 (a) train_epoch
 
 
