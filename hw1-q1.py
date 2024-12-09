@@ -133,9 +133,15 @@ class LogisticRegression(LinearModel):
 class MLP(object):
     def __init__(self, n_classes, n_features, hidden_size):
         # Initialize an MLP with a single hidden layer.
-        self.b = np.zeros(n_classes)
-        mu, sigma = 0.1
-        self.W = np.random.normal(mu,sigma,(n_classes,n_features))
+        mu, sigma = 0.1, 0.1
+        self.b_1 = np.zeros(hidden_size)
+        # print("b_1 shape:", self.b_1.shape)
+        self.W_1 = np.random.normal(mu,sigma,(hidden_size,n_features))
+        # print("W_1 shape:", self.W_1.shape)
+        self.b_2 = np.zeros(n_classes)
+        # print("b_2 shape:", self.b_2.shape)
+        self.W_2 = np.random.normal(mu,sigma,(n_classes,hidden_size))
+        # print("W_2 shape:", self.W_2.shape)
         raise NotImplementedError # Q1.3 (a)
 
     def predict(self, X):
