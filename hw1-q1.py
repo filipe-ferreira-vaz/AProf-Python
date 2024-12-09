@@ -96,7 +96,7 @@ class LogisticRegression(LinearModel):
         e_y_hat[y_hat] = 1
 
         """Create one-hot vector for actual label"""
-        e_y = np.zeros(n_labels) # FIX THIS LATER
+        e_y = np.zeros(n_labels) 
         e_y[y_i] = 1
 
         """Define cross product between e_y and x_i"""
@@ -111,7 +111,7 @@ class LogisticRegression(LinearModel):
         PW_dot_eyhat_cross_xi = np.sum(P_W[:, np.newaxis, np.newaxis] * outer_product, axis=0)
 
         """Update weights"""
-        self.W += learning_rate*(ey_cross_xi - PW_dot_eyhat_cross_xi)
+        self.W += learning_rate*(ey_cross_xi - PW_dot_eyhat_cross_xi) - l2_penalty*learning_rate*self.W
 
         # print("Shape of e_y x x_i: ", ey_cross_xi.shape)
         # print("Shape of P_W * (e_y_hat x x_i): ", PW_dot_eyhat_cross_xi.shape)
@@ -133,6 +133,9 @@ class LogisticRegression(LinearModel):
 class MLP(object):
     def __init__(self, n_classes, n_features, hidden_size):
         # Initialize an MLP with a single hidden layer.
+        self.b = np.zeros(n_classes)
+        mu, sigma = 0.1
+        self.W = np.random.normal(mu,sigma,(n_classes,n_features))
         raise NotImplementedError # Q1.3 (a)
 
     def predict(self, X):
