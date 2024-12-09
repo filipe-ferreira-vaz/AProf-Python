@@ -142,12 +142,28 @@ class MLP(object):
         # print("b_2 shape:", self.b_2.shape)
         self.W_2 = np.random.normal(mu,sigma,(n_classes,hidden_size))
         # print("W_2 shape:", self.W_2.shape)
-        raise NotImplementedError # Q1.3 (a)
+        raise NotImplementedError # Q1.3 (a) init
+    
+    def relu(x):
+        return np.maximum(0, x)
+
+    def relu_derivative(x):
+        return (x > 0).astype(float)
+
+    def softmax(x):
+        exps = np.exp(x - np.max(x, axis=1, keepdims=True)) # shift the values to prevent overflow
+        return exps / np.sum(exps, axis=1, keepdims=True)
 
     def predict(self, X):
         # Compute the forward pass of the network. At prediction time, there is
         # no need to save the values of hidden nodes.
-        raise NotImplementedError # Q1.3 (a)
+        hidden_input = X @ self.W_1 + self.b_1
+        hidden_output = relu(hidden_input)
+        outlayer_input = hidden_output @ self.W_2 + self.b_2
+        output = softmax(outlayer_input)
+        result = np.argmax(output)
+
+        return result
 
     def evaluate(self, X, y):
         """
@@ -164,7 +180,7 @@ class MLP(object):
         """
         Dont forget to return the loss of the epoch.
         """
-        raise NotImplementedError # Q1.3 (a)
+        raise NotImplementedError # Q1.3 (a) train_epoch
 
 
 def plot(epochs, train_accs, val_accs, filename=None):
