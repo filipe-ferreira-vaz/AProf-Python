@@ -96,7 +96,7 @@ class LogisticRegression(LinearModel):
         e_y_hat[y_hat] = 1
 
         """Create one-hot vector for actual label"""
-        e_y = np.zeros(n_labels) # FIX THIS LATER
+        e_y = np.zeros(n_labels) 
         e_y[y_i] = 1
 
         """Define cross product between e_y and x_i"""
@@ -111,7 +111,7 @@ class LogisticRegression(LinearModel):
         PW_dot_eyhat_cross_xi = np.sum(P_W[:, np.newaxis, np.newaxis] * outer_product, axis=0)
 
         """Update weights"""
-        self.W += learning_rate*(ey_cross_xi - PW_dot_eyhat_cross_xi)
+        self.W += learning_rate*(ey_cross_xi - PW_dot_eyhat_cross_xi) - l2_penalty*learning_rate*self.W
 
         # print("Shape of e_y x x_i: ", ey_cross_xi.shape)
         # print("Shape of P_W * (e_y_hat x x_i): ", PW_dot_eyhat_cross_xi.shape)
@@ -133,12 +133,37 @@ class LogisticRegression(LinearModel):
 class MLP(object):
     def __init__(self, n_classes, n_features, hidden_size):
         # Initialize an MLP with a single hidden layer.
-        raise NotImplementedError # Q1.3 (a)
+        mu, sigma = 0.1, 0.1
+        self.b_1 = np.zeros(hidden_size)
+        # print("b_1 shape:", self.b_1.shape)
+        self.W_1 = np.random.normal(mu,sigma,(hidden_size,n_features))
+        # print("W_1 shape:", self.W_1.shape)
+        self.b_2 = np.zeros(n_classes)
+        # print("b_2 shape:", self.b_2.shape)
+        self.W_2 = np.random.normal(mu,sigma,(n_classes,hidden_size))
+        # print("W_2 shape:", self.W_2.shape)
+        raise NotImplementedError # Q1.3 (a) init
+    
+    def relu(x):
+        return np.maximum(0, x)
+
+    def relu_derivative(x):
+        return (x > 0).astype(float)
+
+    def softmax(x):
+        exps = np.exp(x - np.max(x, axis=1, keepdims=True)) # shift the values to prevent overflow
+        return exps / np.sum(exps, axis=1, keepdims=True)
 
     def predict(self, X):
         # Compute the forward pass of the network. At prediction time, there is
         # no need to save the values of hidden nodes.
-        raise NotImplementedError # Q1.3 (a)
+        hidden_input = X @ self.W_1 + self.b_1
+        hidden_output = relu(hidden_input)
+        outlayer_input = hidden_output @ self.W_2 + self.b_2
+        output = softmax(outlayer_input)
+        result = np.argmax(output)
+
+        return result
 
     def evaluate(self, X, y):
         """
@@ -155,7 +180,22 @@ class MLP(object):
         """
         Dont forget to return the loss of the epoch.
         """
-        raise NotImplementedError # Q1.3 (a)
+
+        n_samples = X.shape[0]
+        epoch_loss = 0
+
+        for i in range(n_samples):
+            xi = X[i:i+1]
+            yi = y[i:i+1]
+
+            # Forward pass
+            hidden_input = xi @ self.W_1 + self.b_1
+            hidden_output = relu(hidden_input)
+            output_input = hidden_output @ self.W_2 + self.b_2
+            output = softmax(output_input)
+
+            
+        raise NotImplementedError # Q1.3 (a) train_epoch
 
 
 def plot(epochs, train_accs, val_accs, filename=None):
