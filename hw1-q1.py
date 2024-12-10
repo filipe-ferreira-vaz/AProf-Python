@@ -194,6 +194,28 @@ class MLP(object):
             output_input = hidden_output @ self.W_2 + self.b_2
             output = softmax(output_input)
 
+            #compute loss
+            y_one_hot = np.zeros((1, self.weights_output.shape[1]))
+            y_one_hot[0, yi] = 1
+            loss = cross_entropy_loss(output, yi)
+            epoch_loss += loss
+
+            #Backward pass
+            output_error = (output - y_one_hot)
+            d_weights_output = hidden_output.T @ output_error
+            d_bias_output = output_error
+
+            hidden_error = output_error @ self.weights_output.T * relu_derivative(hidden_input)
+            d_weights_hidden = xi.T @ hidden_error
+            d_bias_hidden = hidden_error
+
+            #Update the wrights
+            self.W_1 -= learning_rate * d_weights_hidden
+            self.b_1 -= learning_rate * d_bias_hidden
+            self.W_2 -= learning_rate * d_weights_output
+            self.b_2 -= learning_rate * d_bias_output
+        
+        return epoch_loss
             
         raise NotImplementedError # Q1.3 (a) train_epoch
 
