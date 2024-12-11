@@ -135,32 +135,40 @@ class MLP(object):
         # Initialize an MLP with a single hidden layer.
         mu, sigma = 0.1, 0.1
         self.b_1 = np.zeros(hidden_size)
-        # print("b_1 shape:", self.b_1.shape)
+        print("b_1 shape:", self.b_1.shape)
         self.W_1 = np.random.normal(mu,sigma,(hidden_size,n_features))
-        # print("W_1 shape:", self.W_1.shape)
+        print("W_1 shape:", self.W_1.shape)
         self.b_2 = np.zeros(n_classes)
-        # print("b_2 shape:", self.b_2.shape)
+        print("b_2 shape:", self.b_2.shape)
         self.W_2 = np.random.normal(mu,sigma,(n_classes,hidden_size))
-        # print("W_2 shape:", self.W_2.shape)
-        raise NotImplementedError # Q1.3 (a) init
+        print("W_2 shape:", self.W_2.shape)
+
+        print("MLP initialized")
+        # raise NotImplementedError # Q1.3 (a) init
     
-    def relu(x):
+    def relu(self, x):
         return np.maximum(0, x)
 
-    def relu_derivative(x):
+    def relu_derivative(self, x):
         return (x > 0).astype(float)
 
-    def softmax(x):
+    def softmax(self, x):
         exps = np.exp(x - np.max(x, axis=1, keepdims=True)) # shift the values to prevent overflow
         return exps / np.sum(exps, axis=1, keepdims=True)
 
     def predict(self, X):
         # Compute the forward pass of the network. At prediction time, there is
         # no need to save the values of hidden nodes.
-        hidden_input = X @ self.W_1 + self.b_1
-        hidden_output = relu(hidden_input)
-        outlayer_input = hidden_output @ self.W_2 + self.b_2
-        output = softmax(outlayer_input)
+
+        print("predict has been called")
+
+        print("Shape of X:", X.shape)
+
+        hidden_input = np.dot(X, self.W_1.T) + self.b_1
+        print("Shape of hidden_input: ", hidden_input.shape)
+        hidden_output = self.relu(hidden_input)
+        outlayer_input = np.dot(hidden_output, self.W_2.T) + self.b_2
+        output = self.softmax(outlayer_input)
         result = np.argmax(output)
 
         return result
@@ -170,6 +178,9 @@ class MLP(object):
         X (n_examples x n_features)
         y (n_examples): gold labels
         """
+
+        print("evaluate has been called")
+
         # Identical to LinearModel.evaluate()
         y_hat = self.predict(X)
         n_correct = (y == y_hat).sum()
@@ -181,6 +192,8 @@ class MLP(object):
         Dont forget to return the loss of the epoch.
         """
 
+        print("train_epoch has been called")
+
         n_samples = X.shape[0]
         epoch_loss = 0
 
@@ -189,15 +202,18 @@ class MLP(object):
             yi = y[i:i+1]
 
             # Forward pass
-            hidden_input = xi @ self.W_1 + self.b_1
-            hidden_output = relu(hidden_input)
-            output_input = hidden_output @ self.W_2 + self.b_2
-            output = softmax(output_input)
+            hidden_input = np.dot(xi, self.W_1.T) + self.b_1
+            hidden_output = self.relu(hidden_input)
+            output_input = np.dot(hidden_output, self.W_2.T) + self.b_2
+            output = self.softmax(output_input)
+
+            print("Shape of output: ", output.shape)
 
             #compute loss
-            y_one_hot = np.zeros((1, self.weights_output.shape[1]))
-            y_one_hot[0, yi] = 1
-            loss = cross_entropy_loss(output, yi)
+            y_one_hot = np.zeros(self.W_2.shape[0])
+            y_one_hot[yi] = 1
+            # print("Shape of one hot: ", y_one_hot.shape)
+            loss = -np.log(np.dot(output, y_one_hot.T))
             epoch_loss += loss
 
             #Backward pass
@@ -205,14 +221,16 @@ class MLP(object):
             d_weights_output = hidden_output.T @ output_error
             d_bias_output = output_error
 
-            hidden_error = output_error @ self.weights_output.T * relu_derivative(hidden_input)
+            hidden_error = np.dot(output_error, self.W_2) * self.relu_derivative(hidden_input)
             d_weights_hidden = xi.T @ hidden_error
             d_bias_hidden = hidden_error
 
-            #Update the wrights
-            self.W_1 -= learning_rate * d_weights_hidden
+            print("d_bias_hidden shape: ", d_bias_hidden.shape)
+
+            #Update the weights
+            self.W_1 -= learning_rate * d_weights_hidden.T
             self.b_1 -= learning_rate * d_bias_hidden
-            self.W_2 -= learning_rate * d_weights_output
+            self.W_2 -= learning_rate * d_weights_output.T
             self.b_2 -= learning_rate * d_bias_output
         
         return epoch_loss
