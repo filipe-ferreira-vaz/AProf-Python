@@ -108,6 +108,7 @@ def train_batch(X, y, model, optimizer, criterion, **kwargs):
     predictions = model(X)
     
     # Step 3: Compute the loss using the criterion
+    criterion = torch.nn.CrossEntropyLoss()
     loss = criterion(predictions, y)
     
     # Step 4: Add L2 regularization to the loss
