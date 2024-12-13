@@ -133,17 +133,18 @@ class LogisticRegression(LinearModel):
 class MLP(object):
     def __init__(self, n_classes, n_features, hidden_size):
         # Initialize an MLP with a single hidden layer.
+        self.epsilon = 1e-6
         mu, sigma = 0.1, 0.1
-        self.b_1 = np.zeros(hidden_size)
-        print("b_1 shape:", self.b_1.shape)
-        self.W_1 = np.random.normal(mu,sigma,(hidden_size,n_features))
-        print("W_1 shape:", self.W_1.shape)
-        self.b_2 = np.zeros(n_classes)
-        print("b_2 shape:", self.b_2.shape)
-        self.W_2 = np.random.normal(mu,sigma,(n_classes,hidden_size))
-        print("W_2 shape:", self.W_2.shape)
+        self.b_hidden = np.zeros(hidden_size)
+        #print("b_hidden shape:", self.b_hidden.shape)
+        self.W_hidden = np.random.normal(mu,sigma,(hidden_size,n_features))
+        #print("W_hidden shape:", self.W_hidden.shape)
+        self.b_output = np.zeros(n_classes)
+        #print("b_output shape:", self.b_output.shape)
+        self.W_output = np.random.normal(mu,sigma,(n_classes,hidden_size))
+        #print("W_output shape:", self.W_output.shape)
 
-        print("MLP initialized")
+        #print("MLP initialized")
         # raise NotImplementedError # Q1.3 (a) init
     
     def relu(self, x):
@@ -153,23 +154,23 @@ class MLP(object):
         return (x > 0).astype(float)
 
     def softmax(self, x):
-        exps = np.exp(x - np.max(x, axis=1, keepdims=True)) # shift the values to prevent overflow
-        return exps / np.sum(exps, axis=1, keepdims=True)
+        exps = np.exp(x - np.max(x)) # shift the values to prevent overflow
+        return exps / np.sum(exps)
 
     def predict(self, X):
         # Compute the forward pass of the network. At prediction time, there is
         # no need to save the values of hidden nodes.
 
-        print("predict has been called")
+        #print("predict has been called")
 
-        print("Shape of X:", X.shape)
+        #print("Shape of X:", X.shape)
 
-        hidden_input = np.dot(X, self.W_1.T) + self.b_1
-        print("Shape of hidden_input: ", hidden_input.shape)
-        hidden_output = self.relu(hidden_input)
-        outlayer_input = np.dot(hidden_output, self.W_2.T) + self.b_2
-        output = self.softmax(outlayer_input)
-        result = np.argmax(output)
+        z_hidden = np.dot(X, self.W_hidden.T) + self.b_hidden
+        #print("Shape of z_hidden: ", z_hidden.shape)
+        h_hidden = self.relu(z_hidden)
+        z_output = np.dot(h_hidden, self.W_output.T) + self.b_output
+        probs = self.softmax(z_output)
+        result = np.argmax(probs)
 
         return result
 
@@ -179,7 +180,7 @@ class MLP(object):
         y (n_examples): gold labels
         """
 
-        print("evaluate has been called")
+        #print("evaluate has been called")
 
         # Identical to LinearModel.evaluate()
         y_hat = self.predict(X)
@@ -192,46 +193,68 @@ class MLP(object):
         Dont forget to return the loss of the epoch.
         """
 
-        print("train_epoch has been called")
+        #print("train_epoch has been called")
 
-        n_samples = X.shape[0]
+        # n_samples = X.shape[0]
         epoch_loss = 0
-
-        for i in range(n_samples):
-            xi = X[i:i+1]
-            yi = y[i:i+1]
+        for xi, yi in zip(X, y):
+        #for i in range(n_samples):
+        #    xi = X[i:i+1]
+        #    yi = y[i:i+1]
 
             # Forward pass
-            hidden_input = np.dot(xi, self.W_1.T) + self.b_1
-            hidden_output = self.relu(hidden_input)
-            output_input = np.dot(hidden_output, self.W_2.T) + self.b_2
-            output = self.softmax(output_input)
+            z_hidden = np.dot(xi, self.W_hidden.T) + self.b_hidden
+            #print("z_hidden: ",z_hidden)
+            h_hidden = self.relu(z_hidden)
+            #print("h_hidden: ",h_hidden)
+            output_input = np.dot(h_hidden, self.W_output.T) + self.b_output
+            #print("output_input: ",output_input)
+            probs = self.softmax(output_input)
+            #print("output: ",output)
 
-            print("Shape of output: ", output.shape)
+            #print("Shape of output: ", output.shape)
 
             #compute loss
-            y_one_hot = np.zeros(self.W_2.shape[0])
+            y_one_hot = np.zeros(self.W_output.shape[0])
             y_one_hot[yi] = 1
             # print("Shape of one hot: ", y_one_hot.shape)
-            loss = -np.log(np.dot(output, y_one_hot.T))
+            #loss = -np.log(np.dot(output, y_one_hot.T))
+            #print("output[0,yi]: ", output[0,yi])
+            loss = -np.log(probs[yi] + self.epsilon)
             epoch_loss += loss
 
             #Backward pass
-            output_error = (output - y_one_hot)
-            d_weights_output = hidden_output.T @ output_error
-            d_bias_output = output_error
+            #Compute output gradient
+            grad_z_output = (probs - y_one_hot)
+            print("output error shape: ", grad_z_output.shape)
+            print("hidden output shape: ",h_hidden.shape)
+            #Compute gradients of hidden layer parameters
+            print("graz_z_output shape: ", grad_z_output.shape)
+            print("h_hidden shape: ", h_hidden.shape)
+            grad_W_output = np.outer(grad_z_output,h_hidden)
+            print("grad_W_output shape: ",grad_W_output.shape)
+            grad_b_output = grad_z_output.squeeze()
 
-            hidden_error = np.dot(output_error, self.W_2) * self.relu_derivative(hidden_input)
-            d_weights_hidden = xi.T @ hidden_error
-            d_bias_hidden = hidden_error
+            #Compute gradient of hidden layer below
+            grad_h_hidden = self.W_output.T @ grad_z_output
+            #print("hidden error shape: ", grad_h_hidden.shape)
+            #Compute gradient of hidden layer below
+            grad_z_hidden = np.multiply(grad_h_hidden,self.relu_derivative(z_hidden))
 
-            print("d_bias_hidden shape: ", d_bias_hidden.shape)
+            #Compute gradients of hidden layer parameters
+            grad_W_hidden = np.outer(grad_z_hidden,xi)
+            grad_b_hidden = grad_z_hidden
+
+            #print("grad_b_hidden shape: ", grad_b_hidden.shape)
 
             #Update the weights
-            self.W_1 -= learning_rate * d_weights_hidden.T
-            self.b_1 -= learning_rate * d_bias_hidden
-            self.W_2 -= learning_rate * d_weights_output.T
-            self.b_2 -= learning_rate * d_bias_output
+            self.W_hidden -= learning_rate * grad_W_hidden
+            self.b_hidden -= learning_rate * grad_b_hidden
+            self.W_output -= learning_rate * grad_W_output
+            self.b_output -= learning_rate * grad_b_output
+
+            print("epoch_loss shape: ", epoch_loss.shape)
+            print("epoch_loss value: ", epoch_loss)
         
         return epoch_loss
             
