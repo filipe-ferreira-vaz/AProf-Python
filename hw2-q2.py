@@ -57,6 +57,7 @@ class CNN(nn.Module):
         fc2_out_dim = 512
         self.maxpool = maxpool
         self.batch_norm = batch_norm
+        self.n_classes = 6
 
         # Initialize convolutional blocks
         self.conv1 = ConvBlock(channels[0], channels[1], dropout_prob, batch_norm)
@@ -74,7 +75,7 @@ class CNN(nn.Module):
         self.relu2 = nn.ReLU()
         # self.dropout2 = nn.Dropout(p=dropout_prob)
 
-        self.fc3 = nn.Linear(512, 6) # still need to pass y as parameter
+        self.fc3 = nn.Linear(512, self.n_classes) # still need to pass y as parameter
 
         # For Q2.2 initalize batch normalization
         
