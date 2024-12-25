@@ -65,10 +65,12 @@ class CNN(nn.Module):
         self.conv3 = ConvBlock(channels[2], channels[3], dropout_prob, batch_norm)
 
         self.flatten = nn.Flatten()
+        self.averagepool = nn.AdaptiveAvgPool2d((1, 1))
         
         # Initialize layers for the MLP block
         self.fc1 = nn.Linear(128 * 6 * 6, fc1_out_dim)  # Assume input image size is 48x48
         self.relu1 = nn.ReLU()
+        self.batch_norm1 = nn.BatchNorm1d(fc1_out_dim) if batch_norm else None
         self.dropout1 = nn.Dropout(p=0.1)
 
         self.fc2 = nn.Linear(1024, fc2_out_dim)
@@ -78,6 +80,7 @@ class CNN(nn.Module):
         self.fc3 = nn.Linear(512, self.n_classes) # still need to pass y as parameter
 
         # For Q2.2 initalize batch normalization
+        
         
 
     def forward(self, x):
