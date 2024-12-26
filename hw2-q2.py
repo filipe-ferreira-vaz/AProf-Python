@@ -29,13 +29,13 @@ class ConvBlock(nn.Module):
 
         # Q2.1. Initialize convolution, maxpool, activation and dropout layers 
         self.conv = nn.Conv2d(in_channels,out_channels, kernel_size=3, stride=1, padding=1)
+        self.batch_norm = nn.BatchNorm2d(out_channels) if batch_norm else None
         self.relu = nn.ReLU()
         self.maxpool = nn.MaxPool2d(kernel_size=2,stride=2)
         self.dropout = nn.Dropout2d(p=0.1)
         
         # Q2.2 Initialize batchnorm layer 
-        self.batch_norm = nn.BatchNorm2d(out_channels) if batch_norm else None
-
+        
     def forward(self, x):
         # input for convolution is [b, c, w, h]
         # Implement execution of layers in right order
@@ -65,26 +65,29 @@ class CNN(nn.Module):
         self.conv3 = ConvBlock(channels[2], channels[3], dropout_prob, batch_norm)
 
         self.flatten = nn.Flatten()
-        self.averagepool = nn.AdaptiveAvgPool2d((1, 1))
+        self.averagepool = nn.AdaptiveAvgPool2d((1, 1)) if batch_norm else nn.Identity()
         
         # Initialize layers for the MLP block
-        self.fc1 = nn.Linear(128 * 6 * 6, fc1_out_dim)  # Assume input image size is 48x48
+        self.fc1 = nn.Linear(128 * 1 * 1, fc1_out_dim) if batch_norm else nn.Linear(128 * 6 * 6, fc1_out_dim) # need to automate this
+        # Assume input image size is 48x48. After 3 conv blocks, the spatial size becomes 6x6
+
         self.relu1 = nn.ReLU()
-        self.batch_norm1 = nn.BatchNorm1d(fc1_out_dim) if batch_norm else None
+        self.batch_norm1 = nn.BatchNorm1d(fc1_out_dim) if batch_norm else nn.Identity()
         self.dropout1 = nn.Dropout(p=0.1)
 
         self.fc2 = nn.Linear(1024, fc2_out_dim)
         self.relu2 = nn.ReLU()
         # self.dropout2 = nn.Dropout(p=dropout_prob)
 
-        self.fc3 = nn.Linear(512, self.n_classes) # still need to pass y as parameter
+        self.fc3 = nn.Linear(512, self.n_classes) # can we pass y as a paramter here?
 
         # For Q2.2 initalize batch normalization
         
         
 
     def forward(self, x):
-        x = x.reshape(x.shape[0], 3, 48, -1)
+        x = x.reshape(x.shape[0], 3, 48, -1) # input vector is reshaped to number of output channels,
+                                             # output width and inferred output height
 
         # Implement execution of convolutional blocks 
         x = self.conv1(x)
@@ -92,11 +95,14 @@ class CNN(nn.Module):
         x = self.conv3(x)
         
         # Flattent output of the last conv block
+        x = self.averagepool(x) if self.batch_norm else x
         x = self.flatten(x)
         
         # Implement MLP part
         x = self.fc1(x)
         x = self.relu1(x)
+        if self.batch_norm:
+            x = self.batch_norm1(x)
         x = self.dropout1(x)
 
         x = self.fc2(x)
@@ -162,7 +168,7 @@ def plot(epochs, plottable, ylabel='', name=''):
 
 
 def get_number_trainable_params(model):
-    raise NotImplementedError
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
 def plot_file_name_sufix(opt, exlude):
