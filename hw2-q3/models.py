@@ -31,7 +31,31 @@ class BahdanauAttention(nn.Module):
         Returns:
             attn_out:   (batch_size, max_tgt_len, hidden_size) - attended vector
         """
+        # query: (batch_size, hidden_size), previous decoder hidden state
+        # encoder_outputs: (batch_size, max_src_len, hidden_size)
+        # src_lengths: (batch_size)
 
+        # Expand query for broadcasting
+        query = query.unsqueeze(1)  # (batch_size, 1, hidden_size)
+
+        # Compute alignment scores
+        alignment_scores = self.v(torch.tanh(self.Ws(query) + self.Wh(encoder_outputs)))  # (batch_size, max_src_len, 1)
+
+        # Remove the last dimension for softmax
+        alignment_scores = alignment_scores.squeeze(-1)  # (batch_size, max_src_len)
+
+        # Mask out padding positions
+        mask = self.sequence_mask(src_lengths)  # (batch_size, max_src_len)
+        alignment_scores.masked_fill_(~mask, float("-inf"))
+
+        # Compute attention weights
+        attention_weights = torch.softmax(alignment_scores, dim=1)  # (batch_size, max_src_len)
+
+        # Compute the context vector as a weighted sum of encoder outputs
+        context = torch.bmm(attention_weights.unsqueeze(1), encoder_outputs)  # (batch_size, 1, hidden_size)
+        context = context.squeeze(1)  # (batch_size, hidden_size)
+
+        return context
         raise NotImplementedError("Add your implementation.")
 
     def sequence_mask(self, lengths):
@@ -162,14 +186,25 @@ class Decoder(nn.Module):
         #         src_lengths,
         #     )
         #############################################
-        embedded = self.dropout(self.embedding(tgt))
+        embedded = self.dropout(self.embedding(tgt))  # (batch_size, max_tgt_len, hidden_size)
+
         outputs = []
+        dec_hidden = dec_state
         for t in range(tgt.size(1) - 1):  # Exclude the final EOS token
-            output, dec_state = self.lstm(embedded[:, t:t+1, :], dec_state)
-            output = self.dropout(output)
-            outputs.append(output)
-        outputs = torch.cat(outputs, dim=1)
-        return outputs, dec_state
+            # Process each timestep
+            input_t = embedded[:, t:t+1, :]  # (batch_size, 1, hidden_size)
+            dec_output, dec_hidden = self.lstm(input_t, dec_hidden)  # dec_output: (batch_size, 1, hidden_size)
+
+            # Apply attention mechanism
+            if self.attn is not None:
+                context = self.attn(dec_hidden[0][-1], encoder_outputs, src_lengths)  # (batch_size, hidden_size)
+                dec_output = torch.cat([context.unsqueeze(1), dec_output], dim=-1)  # Concatenate context
+                dec_output = torch.tanh(self.dropout(dec_output))
+
+            outputs.append(dec_output)
+
+        outputs = torch.cat(outputs, dim=1)  # (batch_size, max_tgt_len - 1, hidden_size)
+        return outputs, dec_hidden
 
         #############################################
         # END OF YOUR CODE
